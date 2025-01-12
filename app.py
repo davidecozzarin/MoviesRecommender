@@ -12,9 +12,6 @@ st.set_page_config(
 )
 
 def load_preprocessed_data(file_path):
-    """
-    Carica i dati preprocessati dal file CSV.
-    """
     try:
         movies = pd.read_csv(file_path)
         return movies
@@ -23,9 +20,6 @@ def load_preprocessed_data(file_path):
         return pd.DataFrame()
 
 def get_random_movies(movies_df, num_movies=30, min_avg_vote=7.5):  
-    """
-    Estrae un numero di film casuali con un punteggio medio minimo specificato.
-    """
     filtered_movies = movies_df[movies_df['avg_vote'] >= min_avg_vote]
     if len(filtered_movies) < num_movies:
         st.warning("Non ci sono abbastanza film con un punteggio medio sufficiente. Mostrando tutti i film disponibili.")
@@ -38,14 +32,18 @@ if "authenticated" not in st.session_state:
     st.session_state["username"] = None
     st.session_state["selected_movies"] = []  # Per memorizzare i film selezionati
     st.session_state["recommendations"] = []  # Raccomandazioni finali
-    st.session_state["page"] = "home"  # Stato iniziale della navigazione
+    st.session_state["page"] = "login"  # Stato iniziale della navigazione
 
 def logout():
     st.session_state["authenticated"] = False
     st.session_state["username"] = None
     st.session_state["selected_movies"] = []
     st.session_state["recommendations"] = []
-    st.session_state["page"] = "home"
+    st.session_state["page"] = "login"
+
+# Forza la pagina di login se non autenticato
+if not st.session_state["authenticated"]:
+    st.session_state["page"] = "login"
 
 st.title("Film Recommender System")
 
@@ -91,12 +89,15 @@ if st.session_state["page"] == "selection":
                 st.session_state["selected_movies"].remove(title)
 
 elif st.session_state["page"] == "filters":
+     # Barra laterale per il logout e l'accesso alla pagina preferenze
+    with st.sidebar:
+        st.header("Menu")
+        if st.button("Logout"):
+            logout()
+        if st.button("Preferences"):
+            st.session_state["page"] = "preferences"
+    
     st.header("Search for Movie Recommendations")
-
-    # Recupera i film selezionati dall'utente
-    selected_movies = st.session_state.get("selected_movies", [])
-    st.write("Selected Movies:")
-    st.write(selected_movies)
 
     # Carica il dataset
     movies = load_preprocessed_data("data/preprocessed_filmtv_movies.csv")
@@ -132,6 +133,30 @@ elif st.session_state["page"] == "filters":
             st.session_state["page"] = "results"
         else:
             st.warning("No recommendations found based on your preferences and filters.")
+
+elif st.session_state["page"] == "preferences":
+    # Barra laterale per il logout e tornare ai filtri
+    with st.sidebar:
+        st.header("Menu")
+        if st.button("Logout"):
+            logout()
+        if st.button("Back to Filters"):
+            st.session_state["page"] = "filters"
+
+    st.header("Your Saved Preferences")
+
+    # Recupera i film salvati dall'utente
+    preferences = get_preferences(st.session_state["username"])
+    if preferences:
+        # Carica il dataset per ottenere i dettagli dei film
+        movies = load_preprocessed_data("data/preprocessed_filmtv_movies.csv")
+        saved_movies = movies[movies['title'].isin(preferences)]  # Filtra i film salvati
+
+        st.write("### Saved Movies")
+        for _, movie in saved_movies.iterrows():
+            st.write(f"**Title**: {movie['title']} | **Duration**: {movie['duration']} min | **Year**: {movie['year']}")
+    else:
+        st.warning("No saved preferences found.")
 
 elif st.session_state["page"] == "results":
     st.header("Recommended Movies")

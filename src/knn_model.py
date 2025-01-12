@@ -251,7 +251,7 @@ def get_recommendations(user_liked_movies, user_disliked_movies, filters):
     return recommended_movies
 
 
-
+"""
 # Esempio di utilizzo
 user_liked_movies = ['Inception', 'The Matrix', 'The Shining']
 user_disliked_movies = ['Twilight', 'Fifty Shades of Grey']
@@ -262,3 +262,4 @@ print(df1[df1['title'].isin(user_liked_movies)])
 print(df1[df1['title'].isin(user_disliked_movies)])
 print("Film raccomandati:")
 print(df1[df1['title'].isin(recommendations)])
+"""
