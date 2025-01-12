@@ -71,7 +71,12 @@ if st.session_state["page"] == "selection":
             if not (3 <= len(st.session_state["selected_movies"]) <= 8):
                 st.warning("Please select between 3 to 8 movies before proceeding.")
             else:
-                update_preferences(st.session_state["username"], st.session_state["selected_movies"])
+                # Recupera solo gli ID dei film selezionati
+                selected_movie_ids = [
+                    movie['filmtv_id'] for movie in st.session_state["movies_to_display"]
+                    if movie['title'] in st.session_state["selected_movies"]
+                ]
+                update_preferences(st.session_state["username"], selected_movie_ids)
                 st.success("Selection saved!")
                 st.session_state["page"] = "filters"
 
@@ -124,9 +129,9 @@ elif st.session_state["page"] == "filters":
 
         # Recupera le informazioni dell'utente dal database
         user_info = get_user(st.session_state["username"])
-        preferences = get_preferences(st.session_state["username"])
+        preferences_ids = get_preferences(st.session_state["username"])
 
-        recommendations = get_recommendations(preferences, [], filters)
+        recommendations = get_recommendations(preferences_ids, [], filters)
 
         if len(recommendations) > 0:  # Verifica se ci sono risultati
             st.session_state["recommendations"] = recommendations
@@ -150,7 +155,7 @@ elif st.session_state["page"] == "preferences":
     if preferences:
         # Carica il dataset per ottenere i dettagli dei film
         movies = load_preprocessed_data("data/preprocessed_filmtv_movies.csv")
-        saved_movies = movies[movies['title'].isin(preferences)]  # Filtra i film salvati
+        saved_movies = movies[movies['filmtv_id'].isin(preferences)]  # Filtra i film salvati
 
         st.write("### Saved Movies")
         for _, movie in saved_movies.iterrows():
@@ -160,11 +165,19 @@ elif st.session_state["page"] == "preferences":
 
 elif st.session_state["page"] == "results":
     st.header("Recommended Movies")
+    # Recupera le raccomandazioni salvate nello stato della sessione
     recommendations = st.session_state.get("recommendations", [])
 
     if len(recommendations) > 0:
-        for title in recommendations:
-            st.write(title)
+        # Carica il dataset per ottenere i dettagli dei film raccomandati
+        movies = load_preprocessed_data("data/preprocessed_filmtv_movies.csv")
+        
+        # Filtra i film raccomandati utilizzando il loro filmtv_id
+        recommended_movies = movies[movies['filmtv_id'].isin(recommendations)]
+        
+        # Mostra i risultati
+        for _, movie in recommended_movies.iterrows():
+            st.write(f"**Title**: {movie['title']} | **Duration**: {movie['duration']} min | **Year**: {movie['year']}")
     else:
         st.warning("No recommendations found based on your preferences and filters.")
 

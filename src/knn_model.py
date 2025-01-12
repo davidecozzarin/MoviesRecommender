@@ -79,53 +79,6 @@ def preprocess_dataset(df):
 
     return transformed_data, column_transformer
 
-transformed_data, column_transformer = preprocess_dataset(df)
-
-# Costruzione del modello kNN
-knn_model = NearestNeighbors(n_neighbors=20, metric='euclidean')  # Puoi cambiare la metrica n_neighbors in base a quante raccomandazioni si vuole fare
-knn_model.fit(transformed_data)
-
-# Funzione per calcolare raccomandazioni
-def recommend_movies(user_liked_movies, user_disliked_movies, df, column_transformer):
-    print("Finding recommendations...")
-
-    # Rimuovi i film scelti dall'utente (sia apprezzati che non apprezzati) dal dataset considerato
-    filtered_df = df[~df['title'].isin(user_liked_movies + user_disliked_movies)]
-
-    # Estrai le feature dei film apprezzati
-    liked_data = df[df['title'].isin(user_liked_movies)]
-    liked_transformed = column_transformer.transform(liked_data)
-
-    # Estrai le feature dei film non apprezzati
-    disliked_data = df[df['title'].isin(user_disliked_movies)]
-    disliked_transformed = column_transformer.transform(disliked_data)
-
-    # Se sono matrici sparse, convertili in array densi
-    if issparse(liked_transformed):
-        liked_transformed = liked_transformed.toarray()
-    if issparse(disliked_transformed):
-        disliked_transformed = disliked_transformed.toarray()
-
-    # Calcola i centroidi (media delle feature dei film scelti)
-    user_liked_profile = np.mean(liked_transformed, axis=0) if len(user_liked_movies) > 0 else np.zeros(liked_transformed.shape[1])
-    user_disliked_profile = np.mean(disliked_transformed, axis=0) if len(user_disliked_movies) > 0 else np.zeros(disliked_transformed.shape[1])
-
-    # Combina i centroidi per creare un profilo utente finale
-    user_profile = user_liked_profile - user_disliked_profile  # Penalizza le zone dei film non graditi
-    user_profile = user_profile.reshape(1, -1)  # Assicurati che sia 2D
-
-    # Ricalcola i vicini escludendo i film scelti
-    filtered_transformed = column_transformer.transform(filtered_df)
-    if issparse(filtered_transformed):
-        filtered_transformed = filtered_transformed.toarray()
-
-    # Trova i vicini più vicini
-    _, indices = knn_model.kneighbors(user_profile)
-
-    # Ritorna i titoli dei film raccomandati
-    recommended_movies = filtered_df.iloc[indices[0]]['title'].values
-    return recommended_movies
-
 
 def filter_movies(dataset, genre=None, max_duration=None, actors=None, directors=None, start_year=None, end_year=None):
     """
@@ -169,20 +122,20 @@ def filter_movies(dataset, genre=None, max_duration=None, actors=None, directors
 
     return filtered
 
-def get_recommendations(user_liked_movies, user_disliked_movies, filters):
+def get_recommendations(user_liked_movies_ids, user_disliked_movies_ids, filters):
     """
     Restituisce raccomandazioni basate sui film apprezzati, non apprezzati e filtri.
-    
+
     Args:
-        user_liked_movies (list): Lista di titoli di film apprezzati.
-        user_disliked_movies (list): Lista di titoli di film non apprezzati.
+        user_liked_movies_ids (list): Lista di ID di film apprezzati.
+        user_disliked_movies_ids (list): Lista di ID di film non apprezzati.
         filters (dict): Filtri selezionati dall'utente.
             - 'genre': lista di generi selezionati
             - 'duration_range': tuple (min_duration, max_duration)
             - 'actor': stringa per filtrare per attore
             - 'director': stringa per filtrare per regista
             - 'year_range': tuple (min_year, max_year)
-            
+
     Returns:
         list: Lista di titoli raccomandati.
     """
@@ -192,7 +145,7 @@ def get_recommendations(user_liked_movies, user_disliked_movies, filters):
     df = pd.read_csv(csv_path).dropna()
 
     # Applica il filtraggio utilizzando filter_movies
-    df = filter_movies(
+    filtered_df = filter_movies(
         dataset=df,
         genre=filters.get("genre"),
         max_duration=filters.get("duration_range", (None, None))[1],
@@ -203,63 +156,60 @@ def get_recommendations(user_liked_movies, user_disliked_movies, filters):
     )
 
     # Debugging output
-    print(f"Number of movies after filtering: {len(df)}")
-    if df.empty:
+    print(f"Number of movies after filtering: {len(filtered_df)}")
+    if filtered_df.empty:
         print("Filtered dataset is empty. Check the filters.")
         return []
 
-    # Pre-elaborazione e raccomandazione
-    transformed_data, column_transformer = preprocess_dataset(df)
-    knn_model = NearestNeighbors(n_neighbors=20, metric='euclidean')
-    knn_model.fit(transformed_data)
-
-    # Rimuovi i film scelti dall'utente
-    filtered_df = df[~df['title'].isin(user_liked_movies + user_disliked_movies)]
+    # Rimuovi i film già classificati dall'utente
+    filtered_df = filtered_df[
+        ~filtered_df['filmtv_id'].isin(user_liked_movies_ids + user_disliked_movies_ids)
+    ]
 
     # Controllo per dati vuoti
     if filtered_df.empty:
+        print("Filtered dataset is empty after removing liked and disliked movies.")
         return []
 
     # Profilo utente
-    liked_data = df[df['title'].isin(user_liked_movies)]
+    liked_data = df[df['filmtv_id'].isin(user_liked_movies_ids)]
+    disliked_data = df[df['filmtv_id'].isin(user_disliked_movies_ids)]
+
     if liked_data.empty:
         raise ValueError("No liked movies found in the dataset. Cannot generate recommendations.")
 
+    # Pre-elaborazione e trasformazione
+    transformed_data, column_transformer = preprocess_dataset(filtered_df)
     liked_transformed = column_transformer.transform(liked_data)
     if issparse(liked_transformed):
         liked_transformed = liked_transformed.toarray()
     user_liked_profile = np.mean(liked_transformed, axis=0)
 
-    user_disliked_profile = np.zeros(user_liked_profile.shape)
-    if user_disliked_movies:
-        disliked_data = df[df['title'].isin(user_disliked_movies)]
-        if not disliked_data.empty:
-            disliked_transformed = column_transformer.transform(disliked_data)
-            if issparse(disliked_transformed):
-                disliked_transformed = disliked_transformed.toarray()
-            user_disliked_profile = np.mean(disliked_transformed, axis=0)
+    # Calcolo del profilo dei film non apprezzati
+    if not disliked_data.empty:
+        disliked_transformed = column_transformer.transform(disliked_data)
+        if issparse(disliked_transformed):
+            disliked_transformed = disliked_transformed.toarray()
+        user_disliked_profile = np.mean(disliked_transformed, axis=0)
+    else:
+        user_disliked_profile = np.zeros(user_liked_profile.shape)
 
+    # Profilo finale dell'utente
     user_profile = user_liked_profile - user_disliked_profile
     user_profile = user_profile.reshape(1, -1)
 
+    # Ricalcola le trasformazioni per i film filtrati
     filtered_transformed = column_transformer.transform(filtered_df)
     if issparse(filtered_transformed):
         filtered_transformed = filtered_transformed.toarray()
 
+    # Modello kNN per trovare i vicini più vicini
+    knn_model = NearestNeighbors(n_neighbors=20, metric='euclidean')
+    knn_model.fit(filtered_transformed)
     _, indices = knn_model.kneighbors(user_profile)
-    recommended_movies = filtered_df.iloc[indices[0]]['title'].values
-    return recommended_movies
 
+    # Ritorna i titoli dei film raccomandati
+    # Ritorna gli ID dei film raccomandati
+    recommended_movies_ids = filtered_df.iloc[indices[0]]['filmtv_id'].values
+    return recommended_movies_ids
 
-"""
-# Esempio di utilizzo
-user_liked_movies = ['Inception', 'The Matrix', 'The Shining']
-user_disliked_movies = ['Twilight', 'Fifty Shades of Grey']
-recommendations = recommend_movies(user_liked_movies, user_disliked_movies, df, column_transformer)
-print("Film recommendations:", recommendations)
-print("Film scelti:")
-print(df1[df1['title'].isin(user_liked_movies)])
-print(df1[df1['title'].isin(user_disliked_movies)])
-print("Film raccomandati:")
-print(df1[df1['title'].isin(recommendations)])
-"""
