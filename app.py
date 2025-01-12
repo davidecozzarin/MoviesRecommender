@@ -121,7 +121,11 @@ elif st.session_state["page"] == "filters":
 
         print(f"Filters applied: {filters}")
 
-        recommendations = get_recommendations(selected_movies, [], filters)
+        # Recupera le informazioni dell'utente dal database
+        user_info = get_user(st.session_state["username"])
+        preferences = get_preferences(st.session_state["username"])
+
+        recommendations = get_recommendations(preferences, [], filters)
 
         if len(recommendations) > 0:  # Verifica se ci sono risultati
             st.session_state["recommendations"] = recommendations
