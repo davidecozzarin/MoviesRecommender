@@ -202,9 +202,13 @@ elif st.session_state["page"] == "preferences":
                     st.rerun()
             with col3:
                 if st.button("❌", key=f"remove_dislike_{movie['filmtv_id']}", help="Remove this movie", use_container_width=True):
-                    disliked.remove(movie['filmtv_id'])
-                    update_disliked(st.session_state["username"], disliked)
-                    st.rerun()
+                    if(len(preferences) < 4):
+                        with col1:
+                            st.error("Keep at least three liked movies in the list.")
+                    else:
+                        disliked.remove(movie['filmtv_id'])
+                        update_disliked(st.session_state["username"], disliked)
+                        st.rerun()
     else:
         st.warning("No disliked movies found.")
 
