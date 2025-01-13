@@ -1,6 +1,5 @@
 import pandas as pd
 import streamlit as st
-import streamlit.components.v1 as components
 from src.auth import register_user, authenticate_user, get_user, update_preferences, get_preferences, update_disliked ,get_disliked
 from src.knn_model import get_recommendations
 
@@ -34,6 +33,8 @@ if "authenticated" not in st.session_state:
     st.session_state["selected_movies"] = []  # Per memorizzare i film selezionati
     st.session_state["recommendations"] = []  # Raccomandazioni finali
     st.session_state["page"] = "login"  # Stato iniziale della navigazione
+    st.session_state["movie_details"] = None  # Dettagli del film selezionato
+
 
 def logout():
     st.session_state["authenticated"] = False
@@ -41,6 +42,8 @@ def logout():
     st.session_state["selected_movies"] = []
     st.session_state["recommendations"] = []
     st.session_state["page"] = "login"
+    st.session_state["movie_details"] = None  # Dettagli del film selezionato
+
 
 # Forza la pagina di login se non autenticato
 if not st.session_state["authenticated"]:
@@ -162,16 +165,22 @@ elif st.session_state["page"] == "preferences":
         st.subheader("Liked Movies")
         liked_movies = movies[movies['filmtv_id'].isin(preferences)]  # Filtra i film salvati
         for _, movie in liked_movies.iterrows():
-            col1, col2 = st.columns([6, 1])
+            col1, col2, col3 = st.columns([9, 1, 1])
             with col1:
                 st.write(f"**Title**: {movie['title']} | **Duration**: {movie['duration']} min | **Year**: {movie['year']}")
             with col2:
-                if st.button("❌", key=f"remove_like_{movie['filmtv_id']}"):
+                if st.button("🔍", key=f"details_{movie['filmtv_id']}", help="View details of this movie", use_container_width=True):
+                    # Passa alla pagina dei dettagli
+                    st.session_state["page"] = "details"
+                    st.session_state["movie_details"] = movie.to_dict()  # Salva i dettagli del film scelto
+                    st.rerun()
+            with col3:
+                if st.button("❌", key=f"remove_like_{movie['filmtv_id']}", help="Remove this movie", use_container_width=True):
                     if(len(preferences) < 4):
                         with col1:
                             st.error("Keep at least three liked movies in the list.")
                     else:
-                        preferences.remove(movie['filmtv_id'])
+                        preferences.remove(movie['filmtv_id'])                    
                         update_preferences(st.session_state["username"], preferences)
                         st.rerun()
     else:
@@ -182,16 +191,47 @@ elif st.session_state["page"] == "preferences":
         st.subheader("Disliked Movies")
         disliked_movies = movies[movies['filmtv_id'].isin(disliked)]  # Filtra i film salvati nei dislike
         for _, movie in disliked_movies.iterrows():
-            col1, col2 = st.columns([6, 1])
+            col1, col2, col3 = st.columns([9, 1, 1])
             with col1:
                 st.write(f"**Title**: {movie['title']} | **Duration**: {movie['duration']} min | **Year**: {movie['year']}")
             with col2:
-                if st.button("❌", key=f"remove_dislike_{movie['filmtv_id']}"):
+                if st.button("🔍", key=f"details_disliked_{movie['filmtv_id']}", help="View details of this movie", use_container_width=True):
+                    # Passa alla pagina dei dettagli
+                    st.session_state["page"] = "details"
+                    st.session_state["movie_details"] = movie.to_dict()  
+                    st.rerun()
+            with col3:
+                if st.button("❌", key=f"remove_dislike_{movie['filmtv_id']}", help="Remove this movie", use_container_width=True):
                     disliked.remove(movie['filmtv_id'])
                     update_disliked(st.session_state["username"], disliked)
                     st.rerun()
     else:
         st.warning("No disliked movies found.")
+
+elif st.session_state["page"] == "details":
+    # Pagina dei dettagli del film
+    movie_details = st.session_state.get("movie_details", {})
+    if not movie_details:
+        st.warning("No movie selected.")
+        if st.button("Back"):
+            st.session_state["page"] = "preferences"
+            st.rerun()
+    else:
+        st.header(f"Details of '{movie_details['title']}'")
+        st.write(f"**Year**: {movie_details['year']}")
+        st.write(f"**Genre**: {movie_details['genre']}")
+        st.write(f"**Duration**: {movie_details['duration']} minutes")
+        st.write(f"**Country**: {movie_details['country']}")
+        st.write(f"**Directors**: {movie_details['directors']}")
+        st.write(f"**Actors**: {movie_details['actors']}")
+        st.write(f"**Average Vote**: {movie_details['avg_vote']} (from {movie_details['total_votes']} votes)")
+        st.write(f"**Description**: {movie_details['description']}")
+        st.write(f"**Attributes**: Humor: {movie_details['humor']}, Rhythm: {movie_details['rhythm']}, "
+                 f"Effort: {movie_details['effort']}, Tension: {movie_details['tension']}, Erotism: {movie_details['erotism']}")
+
+        if st.button("Back"):
+            st.session_state["page"] = "preferences"
+            st.rerun()
 
 elif st.session_state["page"] == "results":
     st.header("Recommended Movies")
@@ -207,7 +247,7 @@ elif st.session_state["page"] == "results":
         
         # Mostra i risultati
         for _, movie in recommended_movies.iterrows():
-            col1, col2, col3 = st.columns([6, 1, 1])  # Layout: Film info, Like button, Dislike button
+            col1, col2, col3, col4 = st.columns([8, 1, 1, 1])  # Layout: Film info, Like button, Dislike button
             with col1:
                 st.write(f"**Title**: {movie['title']} | **Duration**: {movie['duration']} min | **Year**: {movie['year']}")
 
@@ -218,6 +258,13 @@ elif st.session_state["page"] == "results":
             dislike_icon = "🤢" if movie['filmtv_id'] in disliked else ":material/thumb_down_off_alt:"
 
             with col2:
+                if st.button("🔍", key=f"details_{movie['filmtv_id']}", help="View details of this movie", use_container_width=True):
+                    # Passa alla pagina dei dettagli
+                    st.session_state["page"] = "result_details"
+                    st.session_state["movie_details"] = movie.to_dict()  # Salva i dettagli del film scelto
+                    st.rerun()
+
+            with col3:
                 if st.button(f"{like_icon}", key=f"like_{movie['filmtv_id']}", help="Like this movie", use_container_width=True):
                     # Aggiorna preferenze (like)
                     preferences = get_preferences(st.session_state["username"])
@@ -233,7 +280,7 @@ elif st.session_state["page"] == "results":
                         update_disliked(st.session_state["username"], disliked) 
                     st.rerun()
 
-            with col3:
+            with col4:
                 if st.button(f"{dislike_icon}", key=f"dislike_{movie['filmtv_id']}", help="Dislike this movie", use_container_width=True):
                     # Aggiorna dislike
                     disliked = get_disliked(st.session_state["username"])
@@ -254,6 +301,31 @@ elif st.session_state["page"] == "results":
 
     if st.button("Back"):
         st.session_state["page"] = "filters"
+
+elif st.session_state["page"] == "result_details":
+    # Pagina dei dettagli del film
+    movie_details = st.session_state.get("movie_details", {})
+    if not movie_details:
+        st.warning("No movie selected.")
+        if st.button("Back"):
+            st.session_state["page"] = "results"
+            st.rerun()
+    else:
+        st.header(f"Details of '{movie_details['title']}'")
+        st.write(f"**Year**: {movie_details['year']}")
+        st.write(f"**Genre**: {movie_details['genre']}")
+        st.write(f"**Duration**: {movie_details['duration']} minutes")
+        st.write(f"**Country**: {movie_details['country']}")
+        st.write(f"**Directors**: {movie_details['directors']}")
+        st.write(f"**Actors**: {movie_details['actors']}")
+        st.write(f"**Average Vote**: {movie_details['avg_vote']} (from {movie_details['total_votes']} votes)")
+        st.write(f"**Description**: {movie_details['description']}")
+        st.write(f"**Attributes**: Humor: {movie_details['humor']}, Rhythm: {movie_details['rhythm']}, "
+                 f"Effort: {movie_details['effort']}, Tension: {movie_details['tension']}, Erotism: {movie_details['erotism']}")
+
+        if st.button("Back"):
+            st.session_state["page"] = "results"
+            st.rerun()
 
 # Sezione di login e registrazione
 if not st.session_state["authenticated"]:
