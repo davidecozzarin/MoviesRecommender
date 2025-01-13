@@ -1,3 +1,4 @@
+import os
 from pymongo import MongoClient
 from src.auth import (
     register_user,
@@ -9,7 +10,7 @@ from src.auth import (
     get_disliked,
 )
 
-client = MongoClient("mongodb://localhost:27017/")
+client = MongoClient(os.getenv("MONGO_URI", "mongodb://localhost:27017/"))
 db = client["FilmRecommender"]
 
 def setup_module(module):
