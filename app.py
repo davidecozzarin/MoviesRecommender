@@ -256,7 +256,7 @@ elif st.session_state["page"] == "results":
             with col2:
                 if st.button("🔍", key=f"details_{movie['filmtv_id']}", help="View details of this movie", use_container_width=True):
                     # Passa alla pagina dei dettagli
-                    st.session_state["page"] = "search_details"
+                    st.session_state["page"] = "result_details"
                     st.session_state["movie_details"] = movie.to_dict()  # Salva i dettagli del film scelto
                     st.rerun()
 
@@ -298,7 +298,7 @@ elif st.session_state["page"] == "results":
     if st.button("Back"):
         st.session_state["page"] = "filters"
 
-elif st.session_state["page"] == "search_details":
+elif st.session_state["page"] == "result_details":
     # Pagina dei dettagli del film
     movie_details = st.session_state.get("movie_details", {})
     if not movie_details:
