@@ -1,6 +1,6 @@
 from pymongo import MongoClient
 import bcrypt
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Connessione a MongoDB
 client = MongoClient("mongodb://localhost:27017/")
@@ -23,7 +23,7 @@ def register_user(username, password, profile_pic=None):
         "profile_pic": profile_pic,
         "preferences": [],
         "disliked": [],
-        "created_at": datetime.utcnow()
+        "created_at": datetime.now(timezone.utc)
     }
     users_collection.insert_one(user)
     return "User registered successfully."
