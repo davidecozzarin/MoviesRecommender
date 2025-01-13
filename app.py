@@ -2,6 +2,7 @@ import pandas as pd
 import streamlit as st
 from src.auth import register_user, authenticate_user, get_user, update_preferences, get_preferences, update_disliked ,get_disliked
 from src.knn_model import get_recommendations
+import requests
 
 # Configurazione della pagina
 st.set_page_config(
@@ -43,6 +44,22 @@ def logout():
     st.session_state["recommendations"] = []
     st.session_state["page"] = "login"
     st.session_state["movie_details"] = None  # Dettagli del film selezionato
+
+
+def get_movie_poster(title, year):
+    """Recupera il poster di un film utilizzando l'API OMDb."""
+    api_key = "f34d45dd"  # Sostituisci con la tua chiave API OMDb
+    url = f"http://www.omdbapi.com/?apikey={api_key}&t={title}&y={year}"
+    try:
+        response = requests.get(url)
+        data = response.json()
+        if data.get("Response") == "True":
+            return data.get("Poster")  # Restituisce l'URL del poster
+        else:
+            return None  # Nessun poster trovato
+    except Exception as e:
+        print(f"Errore durante il recupero del poster: {e}")
+        return None
 
 
 # Forza la pagina di login se non autenticato
@@ -222,6 +239,15 @@ elif st.session_state["page"] == "details":
             st.rerun()
     else:
         st.header(f"Details of '{movie_details['title']}'")
+
+        # Recupera il poster del film
+        poster_url = get_movie_poster(movie_details['title'], movie_details.get('year'))
+        
+        if poster_url:
+            st.image(poster_url, caption=f"{movie_details['title']}", use_container_width="always")
+        else:
+            st.write("Poster not available.")
+
         st.write(f"**Year**: {movie_details['year']}")
         st.write(f"**Genre**: {movie_details['genre']}")
         st.write(f"**Duration**: {movie_details['duration']} minutes")
@@ -316,6 +342,15 @@ elif st.session_state["page"] == "result_details":
             st.rerun()
     else:
         st.header(f"Details of '{movie_details['title']}'")
+
+        # Recupera il poster del film
+        poster_url = get_movie_poster(movie_details['title'], movie_details.get('year'))
+        
+        if poster_url:
+            st.image(poster_url, caption=f"{movie_details['title']}", use_container_width="always")
+        else:
+            st.write("Poster not available.")
+
         st.write(f"**Year**: {movie_details['year']}")
         st.write(f"**Genre**: {movie_details['genre']}")
         st.write(f"**Duration**: {movie_details['duration']} minutes")
