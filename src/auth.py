@@ -21,7 +21,8 @@ def register_user(username, password, profile_pic=None):
         "username": username,
         "password_hash": hashed_password,
         "profile_pic": profile_pic,
-        "preferences": [],  # Inizializza il campo preferences come lista vuota
+        "preferences": [],
+        "disliked": [],
         "created_at": datetime.utcnow()
     }
     users_collection.insert_one(user)
@@ -56,5 +57,25 @@ def get_preferences(username):
     user = users_collection.find_one({"username": username})
     if user:
         return user["preferences"]  # Restituisce il campo preferences (già presente e inizializzato)
+    return []
+
+# Metodo per verificare e aggiornare i film non piaciuti
+def update_disliked(username, disliked):
+    user = users_collection.find_one({"username": username})
+    if not user:
+        return "User not found."
+    
+    # Aggiorna il campo disliked nel database
+    users_collection.update_one(
+        {"username": username},
+        {"$set": {"disliked": disliked}}
+    )
+    return "Preferences updated successfully."
+
+# Metodo per controllare i dislike
+def get_disliked(username):
+    user = users_collection.find_one({"username": username})
+    if user:
+        return user["disliked"]  # Restituisce il campo disliked (già presente e inizializzato)
     return []
 

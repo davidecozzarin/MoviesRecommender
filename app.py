@@ -1,6 +1,7 @@
 import pandas as pd
 import streamlit as st
-from src.auth import register_user, authenticate_user, get_user, update_preferences, get_preferences
+import streamlit.components.v1 as components
+from src.auth import register_user, authenticate_user, get_user, update_preferences, get_preferences, update_disliked ,get_disliked
 from src.knn_model import get_recommendations
 
 # Configurazione della pagina
@@ -130,8 +131,9 @@ elif st.session_state["page"] == "filters":
         # Recupera le informazioni dell'utente dal database
         user_info = get_user(st.session_state["username"])
         preferences_ids = get_preferences(st.session_state["username"])
+        disliked_ids = get_disliked(st.session_state["username"])
 
-        recommendations = get_recommendations(preferences_ids, [], filters)
+        recommendations = get_recommendations(preferences_ids, disliked_ids, filters)
 
         if len(recommendations) > 0:  # Verifica se ci sono risultati
             st.session_state["recommendations"] = recommendations
@@ -148,20 +150,44 @@ elif st.session_state["page"] == "preferences":
         if st.button("Back to Filters"):
             st.session_state["page"] = "filters"
 
-    st.header("Your Saved Preferences")
+    st.header("Your Saved Preferences and Disliked Movies")
 
     # Recupera i film salvati dall'utente
     preferences = get_preferences(st.session_state["username"])
-    if preferences:
-        # Carica il dataset per ottenere i dettagli dei film
-        movies = load_preprocessed_data("data/preprocessed_filmtv_movies.csv")
-        saved_movies = movies[movies['filmtv_id'].isin(preferences)]  # Filtra i film salvati
+    disliked = get_disliked(st.session_state["username"])
+    movies = load_preprocessed_data("data/preprocessed_filmtv_movies.csv")
 
-        st.write("### Saved Movies")
-        for _, movie in saved_movies.iterrows():
-            st.write(f"**Title**: {movie['title']} | **Duration**: {movie['duration']} min | **Year**: {movie['year']}")
+    # Film nelle preferenze
+    if preferences:
+        st.subheader("Liked Movies")
+        liked_movies = movies[movies['filmtv_id'].isin(preferences)]  # Filtra i film salvati
+        for _, movie in liked_movies.iterrows():
+            col1, col2 = st.columns([6, 1])
+            with col1:
+                st.write(f"**Title**: {movie['title']} | **Duration**: {movie['duration']} min | **Year**: {movie['year']}")
+            with col2:
+                if st.button("❌", key=f"remove_like_{movie['filmtv_id']}"):
+                    preferences.remove(movie['filmtv_id'])
+                    update_preferences(st.session_state["username"], preferences)
+                    st.rerun()
     else:
-        st.warning("No saved preferences found.")
+        st.warning("No liked movies found.")
+
+    # Film nei dislike
+    if disliked:
+        st.subheader("Disliked Movies")
+        disliked_movies = movies[movies['filmtv_id'].isin(disliked)]  # Filtra i film salvati nei dislike
+        for _, movie in disliked_movies.iterrows():
+            col1, col2 = st.columns([6, 1])
+            with col1:
+                st.write(f"**Title**: {movie['title']} | **Duration**: {movie['duration']} min | **Year**: {movie['year']}")
+            with col2:
+                if st.button("❌", key=f"remove_dislike_{movie['filmtv_id']}"):
+                    disliked.remove(movie['filmtv_id'])
+                    update_disliked(st.session_state["username"], disliked)
+                    st.rerun()
+    else:
+        st.warning("No disliked movies found.")
 
 elif st.session_state["page"] == "results":
     st.header("Recommended Movies")
@@ -177,7 +203,48 @@ elif st.session_state["page"] == "results":
         
         # Mostra i risultati
         for _, movie in recommended_movies.iterrows():
-            st.write(f"**Title**: {movie['title']} | **Duration**: {movie['duration']} min | **Year**: {movie['year']}")
+            col1, col2, col3 = st.columns([6, 1, 1])  # Layout: Film info, Like button, Dislike button
+            with col1:
+                st.write(f"**Title**: {movie['title']} | **Duration**: {movie['duration']} min | **Year**: {movie['year']}")
+
+            preferences = get_preferences(st.session_state["username"])
+            disliked = get_disliked(st.session_state["username"])
+            # Icone Material Symbols per like/dislike
+            like_icon = "❤️" if movie['filmtv_id'] in preferences else ":material/thumb_up:"
+            dislike_icon = "🤢" if movie['filmtv_id'] in disliked else ":material/thumb_down_off_alt:"
+
+            with col2:
+                if st.button(f"{like_icon}", key=f"like_{movie['filmtv_id']}", help="Like this movie", use_container_width=True):
+                    # Aggiorna preferenze (like)
+                    preferences = get_preferences(st.session_state["username"])
+                    disliked = get_disliked(st.session_state["username"])
+
+                    if movie['filmtv_id'] not in preferences:
+                        preferences.append(movie['filmtv_id'])
+                        update_preferences(st.session_state["username"], preferences)
+                    
+                    # Rimuovi da disliked se presente
+                    if movie['filmtv_id'] in disliked:
+                        disliked.remove(movie['filmtv_id'])
+                        update_disliked(st.session_state["username"], disliked) 
+                    st.rerun()
+
+            with col3:
+                if st.button(f"{dislike_icon}", key=f"dislike_{movie['filmtv_id']}", help="Dislike this movie", use_container_width=True):
+                    # Aggiorna dislike
+                    disliked = get_disliked(st.session_state["username"])
+                    preferences = get_preferences(st.session_state["username"])
+                    
+                    if movie['filmtv_id'] not in disliked:
+                        disliked.append(movie['filmtv_id'])
+                        update_disliked(st.session_state["username"], disliked)
+                    
+                    # Rimuovi da preferences se presente
+                    if movie['filmtv_id'] in preferences:
+                        preferences.remove(movie['filmtv_id'])
+                        update_preferences(st.session_state["username"], preferences)
+                    st.rerun()
+                    
     else:
         st.warning("No recommendations found based on your preferences and filters.")
 
