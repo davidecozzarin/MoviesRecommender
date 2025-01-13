@@ -167,9 +167,13 @@ elif st.session_state["page"] == "preferences":
                 st.write(f"**Title**: {movie['title']} | **Duration**: {movie['duration']} min | **Year**: {movie['year']}")
             with col2:
                 if st.button("❌", key=f"remove_like_{movie['filmtv_id']}"):
-                    preferences.remove(movie['filmtv_id'])
-                    update_preferences(st.session_state["username"], preferences)
-                    st.rerun()
+                    if(len(preferences) < 4):
+                        with col1:
+                            st.error("Keep at least three liked movies in the list.")
+                    else:
+                        preferences.remove(movie['filmtv_id'])
+                        update_preferences(st.session_state["username"], preferences)
+                        st.rerun()
     else:
         st.warning("No liked movies found.")
 
