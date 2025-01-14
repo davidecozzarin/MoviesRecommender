@@ -1,7 +1,6 @@
 import os
-import pytest
 from pymongo import MongoClient
-from mongomock import MongoClient as MockMongoClient
+import pytest
 from src.auth import (
     register_user,
     authenticate_user,
@@ -12,10 +11,10 @@ from src.auth import (
     get_disliked,
 )
 
+# Connessione a MongoDB
 def get_mongo_client():
-    if os.getenv("TEST_ENV") == "true":
-        return MockMongoClient()  # Usa mongomock per i test
-    return MongoClient(os.getenv("MONGO_URI", "mongodb://localhost:27017/"))
+    mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
+    return MongoClient(mongo_uri)
 
 client = get_mongo_client()
 db = client["FilmRecommender"]
@@ -23,11 +22,12 @@ users_collection = db["users"]
 
 @pytest.fixture(autouse=True)
 def clean_database():
-    """Pulisce il database prima di ogni test."""
+    """Pulisce il database prima e dopo ogni test."""
     users_collection.delete_many({})
     yield
     users_collection.delete_many({})
 
+# Test suite
 def test_register_user_existing():
     register_user("test_existing_user", "password123")
     result = register_user("test_existing_user", "password456")
@@ -69,7 +69,3 @@ def test_get_disliked():
     update_disliked("test_user", [20, 21, 22])
     disliked = get_disliked("test_user")
     assert disliked == [20, 21, 22]
-
-def test_mongo_client():
-    assert os.getenv("TEST_ENV") == "true"
-    assert isinstance(client, MockMongoClient)
