@@ -12,11 +12,12 @@ from src.auth import (
     get_disliked,
 )
 
-# Usa mongomock se siamo in un ambiente di test
-client = (
-    MockMongoClient() if os.getenv("TEST_ENV") == "true" 
-    else MongoClient(os.getenv("MONGO_URI", "mongodb://localhost:27017/"))
-)
+def get_mongo_client():
+    if os.getenv("TEST_ENV") == "true":
+        return MockMongoClient()  # Usa mongomock per i test
+    return MongoClient(os.getenv("MONGO_URI", "mongodb://localhost:27017/"))
+
+client = get_mongo_client()
 db = client["FilmRecommender"]
 users_collection = db["users"]
 
@@ -68,3 +69,7 @@ def test_get_disliked():
     update_disliked("test_user", [20, 21, 22])
     disliked = get_disliked("test_user")
     assert disliked == [20, 21, 22]
+
+def test_mongo_client():
+    assert os.getenv("TEST_ENV") == "true"
+    assert isinstance(client, MockMongoClient)

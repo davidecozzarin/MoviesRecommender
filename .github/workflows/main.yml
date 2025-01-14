@@ -31,3 +31,9 @@ jobs:
       env:
         TEST_ENV: true  # Usa il client mock per i test
       run: pytest
+
+    - name: Debug environment
+      run: echo "TEST_ENV=$TEST_ENV"
+      env:
+        TEST_ENV: true
+      
