@@ -24,7 +24,7 @@ jobs:
           --health-retries 10
           --mount type=tmpfs,destination=/data/db
         env:
-          MONGO_INITDB_ARGS: --nojournal
+          MONGO_INITDB_ARGS: ""
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
