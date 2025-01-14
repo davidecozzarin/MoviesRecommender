@@ -2,9 +2,9 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "test-ci" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "test-ci" ]
 
 permissions:
   contents: read
@@ -18,12 +18,11 @@ jobs:
         ports:
           - 27017:27017
         options: >-
-          --health-cmd "mongo --eval 'db.runCommand({ ping: 1 })'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
+          --health-cmd="mongo --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
           --mount type=tmpfs,destination=/data/db
-          --bind_ip_all
           --nojournal
     steps:
     - name: Checkout code
