@@ -2,6 +2,7 @@ import pandas as pd
 import streamlit as st
 from src.auth import register_user, authenticate_user, get_user, update_preferences, get_preferences, update_disliked ,get_disliked
 from src.knn_model import get_recommendations
+from src.filtering_functions import filter_movies
 import requests
 
 # Configurazione della pagina
@@ -135,6 +136,8 @@ elif st.session_state["page"] == "filters":
             logout()
         if st.button("Preferences"):
             st.session_state["page"] = "preferences"
+        if st.button("Research section"):
+            st.session_state["page"] = "research"
     
     st.header("Search for Movie Recommendations")
 
@@ -159,7 +162,7 @@ elif st.session_state["page"] == "filters":
             "year_range": year_range,
         }
 
-        print(f"Filters applied: {filters}")
+        print(f"Filters applied for the reccomandation: {filters}")
 
         # Recupera le informazioni dell'utente dal database
         user_info = get_user(st.session_state["username"])
@@ -180,8 +183,10 @@ elif st.session_state["page"] == "preferences":
         st.header("Menu")
         if st.button("Logout"):
             logout()
-        if st.button("Back to Filters"):
+        if st.button("Recommandations section"):
             st.session_state["page"] = "filters"
+        if st.button("Research section"):
+            st.session_state["page"] = "research"
 
     st.header("Your Saved Preferences and Disliked Movies")
 
@@ -377,6 +382,140 @@ elif st.session_state["page"] == "result_details":
 
         if st.button("Back"):
             st.session_state["page"] = "results"
+            st.rerun()
+
+elif st.session_state["page"] == "research":
+     # Barra laterale per il logout e l'accesso alla pagina preferenze
+    with st.sidebar:
+        st.header("Menu")
+        if st.button("Logout"):
+            logout()
+        if st.button("Preferences"):
+            st.session_state["page"] = "preferences"
+        if st.button("Reccomandation section"):
+            st.session_state["page"] = "filters"
+    
+    st.header("Search for a Particular Movie")
+
+    # Carica il dataset
+    movies = load_preprocessed_data("data/preprocessed_filmtv_movies.csv")
+
+    # Filtri al centro
+    st.markdown("### Filter Options")
+    selected_title = st.text_input("Search by Title")
+    selected_genre = st.multiselect("Select Genre", options=movies['genre'].unique())
+    duration_range = st.slider("Select Duration (minutes)", int(movies['duration'].min()), int(movies['duration'].max()), (60, 120))
+    selected_actor = st.text_input("Search by Actor")
+    selected_director = st.text_input("Search by Director")
+    year_range = st.slider("Select Year Range", int(movies['year'].min()), int(movies['year'].max()), (2000, 2020))
+
+    # Bottone per la ricerca
+    if st.button("Search"):
+        filters = {
+            "title": selected_title.strip(),
+            "genre": selected_genre,
+            "duration_range": duration_range,
+            "actor": selected_actor.strip(),
+            "director": selected_director.strip(),
+            "year_range": year_range,
+        }
+
+        print(f"Filters applied for the research: {filters}")
+
+        # Recupera le informazioni dell'utente dal database
+        user_info = get_user(st.session_state["username"])
+        preferences_ids = get_preferences(st.session_state["username"])
+        disliked_ids = get_disliked(st.session_state["username"])
+
+        results = filter_movies(movies, 
+                        title=selected_title, 
+                        genre=selected_genre, 
+                        min_duration=duration_range[0], 
+                        max_duration=duration_range[1], 
+                        actors=selected_actor, 
+                        directors=selected_director, 
+                        start_year=year_range[0], 
+                        end_year=year_range[1])
+        
+        print("Number of movies after filtering: ", len(results))
+
+        if results.empty:
+            st.warning("No movies found based on selected filters.")
+        else:
+            st.session_state["results"] = results['filmtv_id'].tolist()
+            st.session_state["page"] = "research_results"
+
+
+elif st.session_state["page"] == "research_results":
+    st.header("Movies found")
+    # Recupera le raccomandazioni salvate nello stato della sessione
+    results = st.session_state.get("results", [])
+
+    if len(results) > 0:
+        # Carica il dataset per ottenere i dettagli dei film raccomandati
+        movies = load_preprocessed_data("data/preprocessed_filmtv_movies.csv")
+        
+        # Filtra i film raccomandati utilizzando il loro filmtv_id
+        movies_found = movies[movies['filmtv_id'].isin(results)]
+        
+        # Mostra i risultati
+        for _, movie in movies_found.iterrows():
+            col1, col2, col3, col4 = st.columns([8, 1, 1, 1])  # Layout: Film info, Like button, Dislike button
+            with col1:
+                st.write(f"**Title**: {movie['title']} | **Duration**: {movie['duration']} min | **Year**: {movie['year']}")
+
+            preferences = get_preferences(st.session_state["username"])
+            disliked = get_disliked(st.session_state["username"])
+            # Icone Material Symbols per like/dislike
+            like_icon = "❤️" if movie['filmtv_id'] in preferences else ":material/thumb_up:"
+            dislike_icon = "🤢" if movie['filmtv_id'] in disliked else ":material/thumb_down_off_alt:"
+
+            with col2:
+                if st.button("🔍", key=f"details_{movie['filmtv_id']}", help="View details of this movie", use_container_width=True):
+                    # Passa alla pagina dei dettagli
+                    st.session_state["page"] = "result_details"
+                    st.session_state["movie_details"] = movie.to_dict()  # Salva i dettagli del film scelto
+                    st.session_state["from_page"] = "research_results"
+                    st.rerun()
+
+            with col3:
+                if st.button(f"{like_icon}", key=f"like_{movie['filmtv_id']}", help="Like this movie", use_container_width=True):
+                    # Aggiorna preferenze (like)
+                    preferences = get_preferences(st.session_state["username"])
+                    disliked = get_disliked(st.session_state["username"])
+
+                    if movie['filmtv_id'] not in preferences:
+                        preferences.append(movie['filmtv_id'])
+                        update_preferences(st.session_state["username"], preferences)
+                    
+                    # Rimuovi da disliked se presente
+                    if movie['filmtv_id'] in disliked:
+                        disliked.remove(movie['filmtv_id'])
+                        update_disliked(st.session_state["username"], disliked) 
+                    st.rerun()
+
+            with col4:
+                if st.button(f"{dislike_icon}", key=f"dislike_{movie['filmtv_id']}", help="Dislike this movie", use_container_width=True):
+                    # Aggiorna dislike
+                    disliked = get_disliked(st.session_state["username"])
+                    preferences = get_preferences(st.session_state["username"])
+                    
+                    if movie['filmtv_id'] not in disliked:
+                        disliked.append(movie['filmtv_id'])
+                        update_disliked(st.session_state["username"], disliked)
+                    
+                    # Rimuovi da preferences se presente
+                    if movie['filmtv_id'] in preferences:
+                        preferences.remove(movie['filmtv_id'])
+                        update_preferences(st.session_state["username"], preferences)
+                    st.rerun()
+                    
+    else:
+        st.warning("No movies found based on selected filters.")
+
+    if st.button("Back"):
+        if st.session_state.get("from_page") == "research_results":
+            st.session_state["page"] = "research"
             st.rerun()
 
 # Sezione di login e registrazione
