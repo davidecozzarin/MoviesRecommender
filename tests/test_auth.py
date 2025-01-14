@@ -1,5 +1,6 @@
 import os
 from pymongo import MongoClient
+from mongomock import MongoClient as MockMongoClient
 from src.auth import (
     register_user,
     authenticate_user,
@@ -9,15 +10,12 @@ from src.auth import (
     update_disliked,
     get_disliked,
 )
-from mongomock import MongoClient as MockMongoClient
 
-
-# Usa un client mock durante i test
-if os.getenv("TEST_ENV", "false").lower() == "true":
-    client = MockMongoClient()
-else:
-    client = MongoClient(os.getenv("MONGO_URI", "mongodb://localhost:27017/"))
-
+# Usa mongomock se siamo in un ambiente di test
+client = (
+    MockMongoClient() if os.getenv("TEST_ENV") == "true" 
+    else MongoClient(os.getenv("MONGO_URI", "mongodb://localhost:27017/"))
+)
 db = client["FilmRecommender"]
 
 def setup_module(module):
