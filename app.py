@@ -82,6 +82,10 @@ if st.session_state["page"] == "selection":
 
     col1, col2 = st.columns([1, 1])
 
+    # Variabile per il messaggio di avviso o successo
+    alert_message = None
+    alert_type = None
+
     with col1:
         if st.button("Reload Movies"):
             st.session_state["movies_to_display"] = get_random_movies(movies, num_movies=30)
@@ -90,7 +94,8 @@ if st.session_state["page"] == "selection":
     with col2:
         if st.button("Confirm Selection"):
             if not (3 <= len(st.session_state["selected_movies"]) <= 8):
-                st.warning("Please select between 3 to 8 movies before proceeding.")
+                alert_message = "Please select between 3 to 8 movies before proceeding."
+                alert_type = "warning"
             else:
                 # Recupera solo gli ID dei film selezionati
                 selected_movie_ids = [
@@ -98,8 +103,16 @@ if st.session_state["page"] == "selection":
                     if movie['title'] in st.session_state["selected_movies"]
                 ]
                 update_preferences(st.session_state["username"], selected_movie_ids)
-                st.success("Selection saved!")
+                alert_message = "Selection saved!"
+                alert_type = "success"
                 st.session_state["page"] = "filters"
+
+    # Mostra il messaggio di avviso o successo sopra l'elenco dei film
+    if alert_message:
+        if alert_type == "warning":
+            st.warning(alert_message)
+        elif alert_type == "success":
+            st.success(alert_message)
 
     # Mostra i film con titolo, durata e anno
     for movie in st.session_state["movies_to_display"]:
