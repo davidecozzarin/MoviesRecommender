@@ -9,17 +9,22 @@ from src.auth import (
     update_disliked,
     get_disliked,
 )
+from mongomock import MongoClient as MockMongoClient
 
-client = MongoClient(os.getenv("MONGO_URI", "mongodb://localhost:27017/"))
+
+# Usa un client mock durante i test
+if os.getenv("TEST_ENV", "false").lower() == "true":
+    client = MockMongoClient()
+else:
+    client = MongoClient(os.getenv("MONGO_URI", "mongodb://localhost:27017/"))
+
 db = client["FilmRecommender"]
 
 def setup_module(module):
-    """Pulisce gli utenti di test prima di iniziare i test."""
-    db["users"].delete_many({"username": {"$regex": "^test_"}})  
+    db["users"].delete_many({})
 
 def teardown_module(module):
-    """Pulisce gli utenti di test dopo i test."""
-    db["users"].delete_many({"username": {"$regex": "^test_"}})  
+    db["users"].delete_many({})  
 
 def test_register_user_existing():
     register_user("test_existing_user", "password123")

@@ -1,7 +1,6 @@
 import pytest
 import pandas as pd
 import numpy as np
-from unittest.mock import MagicMock
 from src.knn_model import filter_movies, get_recommendations
 
 def test_filter_movies():
