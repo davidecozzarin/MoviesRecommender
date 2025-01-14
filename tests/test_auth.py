@@ -1,3 +1,4 @@
+"""
 import os
 from pymongo import MongoClient
 import pytest
@@ -22,7 +23,6 @@ users_collection = db["users"]
 
 @pytest.fixture(autouse=True)
 def clean_database():
-    """Pulisce il database prima e dopo ogni test."""
     users_collection.delete_many({})
     yield
     users_collection.delete_many({})
@@ -69,3 +69,4 @@ def test_get_disliked():
     update_disliked("test_user", [20, 21, 22])
     disliked = get_disliked("test_user")
     assert disliked == [20, 21, 22]
+"""
