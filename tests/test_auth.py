@@ -1,6 +1,5 @@
-"""
-
 import os
+import pytest
 from pymongo import MongoClient
 from mongomock import MongoClient as MockMongoClient
 from src.auth import (
@@ -19,12 +18,14 @@ client = (
     else MongoClient(os.getenv("MONGO_URI", "mongodb://localhost:27017/"))
 )
 db = client["FilmRecommender"]
+users_collection = db["users"]
 
-def setup_module(module):
-    db["users"].delete_many({})
-
-def teardown_module(module):
-    db["users"].delete_many({})  
+@pytest.fixture(autouse=True)
+def clean_database():
+    """Pulisce il database prima di ogni test."""
+    users_collection.delete_many({})
+    yield
+    users_collection.delete_many({})
 
 def test_register_user_existing():
     register_user("test_existing_user", "password123")
@@ -67,6 +68,3 @@ def test_get_disliked():
     update_disliked("test_user", [20, 21, 22])
     disliked = get_disliked("test_user")
     assert disliked == [20, 21, 22]
-
-    
-"""
