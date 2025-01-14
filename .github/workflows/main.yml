@@ -22,9 +22,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 10
-          --mount type=tmpfs,destination=/data/db
-        env:
-          MONGO_INITDB_ARGS: ""
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -49,3 +46,7 @@ jobs:
       env:
         MONGO_URI: mongodb://localhost:27017
       run: pytest
+
+    - name: Debug Mongo Logs
+      if: failure()  # Esegui solo se fallisce uno step precedente
+      run: docker logs $(docker ps -q --filter "name=mongo")
