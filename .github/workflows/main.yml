@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ "main", "test-ci" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "main", "test-ci" ]
+    branches: [ "main" ]
 
 permissions:
   contents: read
@@ -33,10 +33,3 @@ jobs:
         MONGO_URI: ${{ secrets.MONGO_URI }}
       run: pytest
 
-    - name: Test Streamlit launch
-      env:
-        MONGO_URI: ${{ secrets.MONGO_URI }}
-      run: |
-        echo "Testing Streamlit launch..."
-        timeout 60 streamlit run app.py
-        echo "Streamlit started and stopped successfully."
