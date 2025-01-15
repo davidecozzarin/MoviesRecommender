@@ -4,6 +4,7 @@ from src.auth import register_user, authenticate_user, get_user, update_preferen
 from src.knn_model import get_recommendations
 from src.filtering_functions import filter_movies
 import requests
+import math
 
 # Configurazione della pagina
 st.set_page_config(
@@ -381,7 +382,7 @@ elif st.session_state["page"] == "result_details":
                  f"Effort: {movie_details['effort']}, Tension: {movie_details['tension']}, Erotism: {movie_details['erotism']}")
 
         if st.button("Back"):
-            st.session_state["page"] = "results"
+            st.session_state["page"] = "research_results"
             st.rerun()
 
 elif st.session_state["page"] == "research":
@@ -451,21 +452,50 @@ elif st.session_state["page"] == "research_results":
     # Recupera le raccomandazioni salvate nello stato della sessione
     results = st.session_state.get("results", [])
 
+    MOVIES_PER_PAGE = 30
+
     if len(results) > 0:
         # Carica il dataset per ottenere i dettagli dei film raccomandati
         movies = load_preprocessed_data("data/preprocessed_filmtv_movies.csv")
         
         # Filtra i film raccomandati utilizzando il loro filmtv_id
         movies_found = movies[movies['filmtv_id'].isin(results)]
-        
+
+        # Calcola il numero totale di pagine
+        total_pages = math.ceil(len(movies_found) / MOVIES_PER_PAGE)
+
+        # Inizializza la pagina corrente se non è già impostata
+        if "current_page" not in st.session_state:
+            st.session_state["current_page"] = 1
+
+        # Garantisce che la pagina corrente non superi i limiti
+        st.session_state["current_page"] = max(1, min(st.session_state["current_page"], total_pages))
+
+        # Mostra i film della pagina corrente
+        start_idx = (st.session_state["current_page"] - 1) * MOVIES_PER_PAGE
+        end_idx = start_idx + MOVIES_PER_PAGE
+
+        # Estrai solo i film della pagina corrente
+        current_movies = movies_found.iloc[start_idx:end_idx]
+
+        if(total_pages > 1):
+            # Visualizza i film della pagina corrent
+            col1, col2, col3 = st.columns([1, 1, 1])
+            with col2:
+                st.markdown(
+                    f"<p style='text-align: center;'>Page {st.session_state['current_page']} of {total_pages}</p>",
+                    unsafe_allow_html=True
+                )
+
         # Mostra i risultati
-        for _, movie in movies_found.iterrows():
+        for _, movie in current_movies.iterrows():
             col1, col2, col3, col4 = st.columns([8, 1, 1, 1])  # Layout: Film info, Like button, Dislike button
             with col1:
                 st.write(f"**Title**: {movie['title']} | **Duration**: {movie['duration']} min | **Year**: {movie['year']}")
 
             preferences = get_preferences(st.session_state["username"])
             disliked = get_disliked(st.session_state["username"])
+
             # Icone Material Symbols per like/dislike
             like_icon = "❤️" if movie['filmtv_id'] in preferences else ":material/thumb_up:"
             dislike_icon = "🤢" if movie['filmtv_id'] in disliked else ":material/thumb_down_off_alt:"
@@ -508,6 +538,69 @@ elif st.session_state["page"] == "research_results":
                     if movie['filmtv_id'] in preferences:
                         preferences.remove(movie['filmtv_id'])
                         update_preferences(st.session_state["username"], preferences)
+                    st.rerun()
+
+        if(total_pages > 1):
+
+            # Navigazione tra le pagine
+            st.write("----")
+            
+            col1, col2, col3 = st.columns([1, 1, 1])
+            with col2:
+                st.markdown(
+                    f"<p style='text-align: center;'>Page {st.session_state['current_page']} of {total_pages}</p>",
+                    unsafe_allow_html=True
+                )
+
+            # Barra di navigazione
+            pagination_cols = st.columns(11)  # Totale colonne: 2 per ⏮️ e ◀️, 7 per numeri, 2 per ▶️ e ⏭️
+
+            # Calcolo range delle pagine da mostrare (centrando quella corrente)
+            half_range = 3  # Numero di pagine a sinistra e a destra della corrente
+            min_page = max(1, st.session_state["current_page"] - half_range)
+            max_page = min(total_pages, st.session_state["current_page"] + half_range)
+
+            # Se ci sono meno di 7 pagine vicine disponibili, ribilancia a sinistra o a destra
+            if max_page - min_page < 6:
+                if min_page == 1:
+                    max_page = min(7, total_pages)
+                elif max_page == total_pages:
+                    min_page = max(1, total_pages - 6)
+
+            # Pulsante "⏮️" per andare alla prima pagina
+            with pagination_cols[0]:
+                if st.button("⏮️", disabled=st.session_state["current_page"] == 1):
+                    st.session_state["current_page"] = 1
+                    st.rerun()
+
+            # Pulsante "◀️" per andare alla pagina precedente
+            with pagination_cols[1]:
+                if st.button("◀️", disabled=st.session_state["current_page"] == 1):
+                    st.session_state["current_page"] -= 1
+                    st.rerun()
+
+            # Bottoni numerici per le pagine vicine
+            for idx, page_num in enumerate(range(min_page, max_page + 1)):
+                with pagination_cols[2 + idx]:  # Inizia dalla terza colonna
+                    if st.button(
+                        f"{page_num}",
+                        key=f"page_{page_num}",
+                        use_container_width=True,
+                        disabled=(page_num == st.session_state["current_page"]),  # Disabilita il pulsante della pagina corrente
+                    ):
+                        st.session_state["current_page"] = page_num
+                        st.rerun()
+
+            # Pulsante "▶️" per andare alla pagina successiva
+            with pagination_cols[9]:  # Penultima colonna
+                if st.button("▶️", disabled=st.session_state["current_page"] == total_pages):
+                    st.session_state["current_page"] += 1
+                    st.rerun()
+
+            # Pulsante "⏭️" per andare all'ultima pagina
+            with pagination_cols[10]:  # Ultima colonna
+                if st.button("⏭️", disabled=st.session_state["current_page"] == total_pages):
+                    st.session_state["current_page"] = total_pages
                     st.rerun()
                     
     else:
