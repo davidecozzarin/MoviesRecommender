@@ -87,10 +87,10 @@ def show_login_register_page():
 def logout():
     st.session_state["authenticated"] = False
     st.session_state["username"] = None
-    # st.session_state["selected_movies"] = []
-    # st.session_state["recommendations"] = []
-    # st.session_state["page"] = "login"
-    # st.session_state["movie_details"] = None
+    st.session_state["selected_movies"] = []
+    st.session_state["recommendations"] = []
+    st.session_state["page"] = "login"
+    st.session_state["movie_details"] = None
     show_login_register_page()
     st.rerun()
 

@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ "main", "test-ci" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "main", "test-ci" ]
+    branches: [ "main" ]
 
 permissions:
   contents: read
@@ -33,26 +33,3 @@ jobs:
         MONGO_URI: ${{ secrets.MONGO_URI }}
       run: pytest
 
-  deploy:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.12
-
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-          pip install mlflow streamlit
-
-      - name: Deploy to Streamlit Cloud
-        env:
-          MONGO_URI: ${{ secrets.MONGO_URI }}
-        run: |
-          echo "Streamlit deployment initiated."
-          streamlit run app.py
