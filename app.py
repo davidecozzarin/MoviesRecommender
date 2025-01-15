@@ -37,14 +37,61 @@ if "authenticated" not in st.session_state:
     st.session_state["page"] = "login"  # Stato iniziale della navigazione
     st.session_state["movie_details"] = None  # Dettagli del film selezionato
 
+# Funzione per la gestione di login e registrazione
+def show_login_register_page():
+    if "authenticated" not in st.session_state or not st.session_state["authenticated"]:
+        tab1, tab2 = st.tabs(["Login", "Register"])
+
+        with tab1:
+            st.header("Login")
+            username = st.text_input("Username", key="login_username")
+            password = st.text_input("Password", type="password", key="login_password")
+
+            if st.button("Login"):
+                authenticated, user = authenticate_user(username, password)
+                if authenticated:
+                    st.success("Login successful!")
+                    st.session_state["authenticated"] = True
+                    st.session_state["username"] = username
+                    preferences = get_preferences(username)
+                    if preferences:
+                        st.session_state["page"] = "filters"
+                        st.rerun()
+                    else:
+                        st.session_state["page"] = "selection"
+                        st.rerun()
+                else:
+                    st.error("Invalid username or password.")
+
+        with tab2:
+            st.header("Register")
+            new_username = st.text_input("New Username", key="register_username")
+            new_password = st.text_input("Password", type="password", key="register_password")
+
+            if st.button("Register"):
+                if new_username and new_password:
+                    response = register_user(new_username, new_password)
+                    if response == "User registered successfully.":
+                        st.success(response)
+                        st.session_state["authenticated"] = True
+                        st.session_state["username"] = new_username
+                        st.session_state["page"] = "selection"
+                        st.rerun()
+                    else:
+                        st.error(response)
+                        st.rerun()
+                else:
+                    st.warning("Please provide both username and password.")
 
 def logout():
     st.session_state["authenticated"] = False
     st.session_state["username"] = None
-    st.session_state["selected_movies"] = []
-    st.session_state["recommendations"] = []
-    st.session_state["page"] = "login"
-    st.session_state["movie_details"] = None  # Dettagli del film selezionato
+    # st.session_state["selected_movies"] = []
+    # st.session_state["recommendations"] = []
+    # st.session_state["page"] = "login"
+    # st.session_state["movie_details"] = None
+    show_login_register_page()
+    st.rerun()
 
 
 def get_movie_poster(title, year):
@@ -519,42 +566,6 @@ elif st.session_state["page"] == "research_results":
             st.rerun()
 
 # Sezione di login e registrazione
-if not st.session_state["authenticated"]:
-    tab1, tab2 = st.tabs(["Login", "Register"])
 
-    with tab1:
-        st.header("Login")
-        username = st.text_input("Username", key="login_username")
-        password = st.text_input("Password", type="password", key="login_password")
-
-        if st.button("Login"):
-            authenticated, user = authenticate_user(username, password)
-            if authenticated:
-                st.success("Login successful!")
-                st.session_state["authenticated"] = True
-                st.session_state["username"] = username
-                preferences = get_preferences(username)
-                if preferences:
-                    st.session_state["page"] = "filters"
-                else:
-                    st.session_state["page"] = "selection"
-            else:
-                st.error("Invalid username or password.")
-
-    with tab2:
-        st.header("Register")
-        new_username = st.text_input("New Username", key="register_username")
-        new_password = st.text_input("Password", type="password", key="register_password")
-
-        if st.button("Register"):
-            if new_username and new_password:
-                response = register_user(new_username, new_password)
-                if response == "User registered successfully.":
-                    st.success(response)
-                    st.session_state["authenticated"] = True
-                    st.session_state["username"] = new_username
-                    st.session_state["page"] = "selection"
-                else:
-                    st.error(response)
-            else:
-                st.warning("Please provide both username and password.")
+if "authenticated" not in st.session_state or not st.session_state["authenticated"]:
+    show_login_register_page()
