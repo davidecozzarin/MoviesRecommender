@@ -1,9 +1,14 @@
 from pymongo import MongoClient
 import bcrypt
 from datetime import datetime, timezone
+import os
 
 # Connessione a MongoDB
-client = MongoClient("mongodb://localhost:27017/")
+MONGO_URI = os.getenv("MONGO_URI")
+if not MONGO_URI:
+    raise ValueError("La variabile d'ambiente MONGO_URI non è definita.")
+
+client = MongoClient(MONGO_URI)
 db = client["FilmRecommender"]
 users_collection = db["users"]
 
