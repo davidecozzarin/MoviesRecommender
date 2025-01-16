@@ -1,10 +1,9 @@
-import pandas as pd
 import streamlit as st
 from views.login_register import show_login_register_page
 from views.selection import show_selection_page
 from views.filters import show_filters_page
 from views.preferences import show_preferences_page
-from views.details import show_details_page, show_results_details_page
+from views.details import show_details_page
 from views.results import show_results_page
 from views.research import show_research_page, show_research_results_page
 
@@ -58,8 +57,10 @@ elif st.session_state["page"] == "filters":
             logout()
         if st.button("Preferences"):
             st.session_state["page"] = "preferences"
+            st.rerun()
         if st.button("Research section"):
             st.session_state["page"] = "research"
+            st.rerun()
     show_filters_page()
 
 elif st.session_state["page"] == "preferences":
@@ -70,13 +71,19 @@ elif st.session_state["page"] == "preferences":
             logout()
         if st.button("Recommandations section"):
             st.session_state["page"] = "filters"
+            st.rerun()
         if st.button("Research section"):
             st.session_state["page"] = "research"
+            st.rerun()
+    st.session_state["from_page"] = "preferences"
     show_preferences_page()
 
 elif st.session_state["page"] == "details":
     # Pagina dei dettagli del film
     show_details_page()
+    if st.button("Back"):
+        st.session_state["page"] = st.session_state.get("from_page")
+        st.rerun()
         
 
 elif st.session_state["page"] == "results":
@@ -84,7 +91,10 @@ elif st.session_state["page"] == "results":
 
 elif st.session_state["page"] == "result_details":
     # Pagina dei dettagli del film
-    show_results_details_page()
+    show_details_page()
+    if st.button("Back"):
+        st.session_state["page"] = st.session_state.get("from_page")
+        st.rerun()
 
 elif st.session_state["page"] == "research":
      # Barra laterale per il logout e l'accesso alla pagina preferenze
@@ -94,12 +104,24 @@ elif st.session_state["page"] == "research":
             logout()
         if st.button("Preferences"):
             st.session_state["page"] = "preferences"
+            st.rerun()
         if st.button("Reccomandation section"):
             st.session_state["page"] = "filters"
+            st.rerun()
     show_research_page()
 
 
 elif st.session_state["page"] == "research_results":
+    with st.sidebar:
+        st.header("Menu")
+        if st.button("Logout"):
+            logout()
+        if st.button("Preferences"):
+            st.session_state["page"] = "preferences"
+            st.rerun()
+        if st.button("Reccomandation section"):
+            st.session_state["page"] = "filters"
+            st.rerun()
     show_research_results_page()
 
 # Sezione di login e registrazione
