@@ -53,28 +53,33 @@ elif st.session_state["page"] == "filters":
      # Barra laterale per il logout e l'accesso alla pagina preferenze
     with st.sidebar:
         st.header("Menu")
-        if st.button("Logout"):
-            logout()
-        if st.button("Preferences"):
-            st.session_state["page"] = "preferences"
-            st.rerun()
         if st.button("Research section"):
             st.session_state["page"] = "research"
             st.rerun()
+        st.markdown("-----")
+        if st.button("Account"):
+            st.session_state["page"] = "preferences"
+            st.rerun()
+        if st.button("Logout"):
+            logout()
     show_filters_page()
 
 elif st.session_state["page"] == "preferences":
     # Barra laterale per il logout e tornare ai filtri
     with st.sidebar:
         st.header("Menu")
-        if st.button("Logout"):
-            logout()
         if st.button("Recommandations section"):
             st.session_state["page"] = "filters"
             st.rerun()
         if st.button("Research section"):
             st.session_state["page"] = "research"
             st.rerun()
+        st.markdown("-----")
+        if st.button("Account"):
+            st.session_state["page"] = "preferences"
+            st.rerun()
+        if st.button("Logout"):
+            logout()
     st.session_state["from_page"] = "preferences"
     show_preferences_page()
 
@@ -100,28 +105,30 @@ elif st.session_state["page"] == "research":
      # Barra laterale per il logout e l'accesso alla pagina preferenze
     with st.sidebar:
         st.header("Menu")
-        if st.button("Logout"):
-            logout()
-        if st.button("Preferences"):
-            st.session_state["page"] = "preferences"
-            st.rerun()
         if st.button("Reccomandation section"):
             st.session_state["page"] = "filters"
             st.rerun()
+        st.markdown("-----")
+        if st.button("Account"):
+            st.session_state["page"] = "preferences"
+            st.rerun()
+        if st.button("Logout"):
+            logout()
     show_research_page()
 
 
 elif st.session_state["page"] == "research_results":
     with st.sidebar:
         st.header("Menu")
-        if st.button("Logout"):
-            logout()
-        if st.button("Preferences"):
-            st.session_state["page"] = "preferences"
-            st.rerun()
         if st.button("Reccomandation section"):
             st.session_state["page"] = "filters"
             st.rerun()
+        st.markdown("-----")
+        if st.button("Account"):
+            st.session_state["page"] = "preferences"
+            st.rerun()
+        if st.button("Logout"):
+            logout()
     show_research_results_page()
 
 # Sezione di login e registrazione
