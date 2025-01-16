@@ -52,9 +52,10 @@ def show_research_page():
         if results.empty:
             st.warning("No movies found based on selected filters.")
         else:
+            st.session_state["current_page"] = 1
             st.session_state["results"] = results['filmtv_id'].tolist()
             st.session_state["page"] = "research_results"
-        st.rerun()
+            st.rerun()
 
 def show_research_results_page():
     st.header("Movies found")
