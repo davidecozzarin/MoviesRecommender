@@ -54,6 +54,7 @@ def show_research_page():
         else:
             st.session_state["results"] = results['filmtv_id'].tolist()
             st.session_state["page"] = "research_results"
+        st.rerun()
 
 def show_research_results_page():
     st.header("Movies found")
