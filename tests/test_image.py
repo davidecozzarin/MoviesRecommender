@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch
-from app import get_movie_poster
+from src.movies_utils import get_movie_poster
 
 @patch("requests.get")
 def test_get_movie_poster_success(mock_get):

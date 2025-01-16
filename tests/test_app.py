@@ -1,7 +1,6 @@
 import pandas as pd
 import pytest
-from app import load_preprocessed_data, get_random_movies
-from streamlit.runtime.scriptrunner import get_script_run_ctx
+from src.movies_utils import load_preprocessed_data, get_random_movies
 
 @pytest.fixture
 def sample_movies_df():
