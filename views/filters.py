@@ -39,5 +39,7 @@ def show_filters_page():
         if len(recommendations) > 0:  # Verifica se ci sono risultati
             st.session_state["recommendations"] = recommendations
             st.session_state["page"] = "results"
+            st.rerun()
         else:
             st.warning("No recommendations found based on your preferences and filters.")
+        

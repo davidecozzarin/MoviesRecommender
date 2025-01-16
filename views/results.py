@@ -71,3 +71,4 @@ def show_results_page():
 
     if st.button("Back"):
         st.session_state["page"] = "filters"
+        st.rerun()
