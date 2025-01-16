@@ -18,7 +18,7 @@ def show_filters_page():
     year_range = st.slider("Select Year Range", int(movies['year'].min()), int(movies['year'].max()), (2000, 2020))
 
     # Bottone per la raccomandazione
-    if st.button("Get Recommendations"):
+    if st.button("Get Recommandations"):
         filters = {
             "genre": selected_genre,
             "duration_range": duration_range,
