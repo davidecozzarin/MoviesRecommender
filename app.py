@@ -356,6 +356,7 @@ elif st.session_state["page"] == "results":
             with col2:
                 if st.button("🔍", key=f"details_{movie['filmtv_id']}", help="View details of this movie", use_container_width=True):
                     # Passa alla pagina dei dettagli
+                    st.session_state["from_page"] = "results"
                     st.session_state["page"] = "result_details"
                     st.session_state["movie_details"] = movie.to_dict()  # Salva i dettagli del film scelto
                     st.rerun()
@@ -404,7 +405,8 @@ elif st.session_state["page"] == "result_details":
     if not movie_details:
         st.warning("No movie selected.")
         if st.button("Back"):
-            st.session_state["page"] = "results"
+            if st.session_state.get("from_page") == "results":
+                st.session_state["page"] = "results"
             st.rerun()
     else:
         st.header(f"Details of '{movie_details['title']}'")
@@ -429,7 +431,10 @@ elif st.session_state["page"] == "result_details":
                  f"Effort: {movie_details['effort']}, Tension: {movie_details['tension']}, Erotism: {movie_details['erotism']}")
 
         if st.button("Back"):
-            st.session_state["page"] = "research_results"
+            if st.session_state.get("from_page") == "results":
+                st.session_state["page"] = "results"
+            elif st.session_state.get("from_page") == "research_results":
+                st.session_state["page"] = "research_results"
             st.rerun()
 
 elif st.session_state["page"] == "research":
@@ -654,7 +659,7 @@ elif st.session_state["page"] == "research_results":
         st.warning("No movies found based on selected filters.")
 
     if st.button("Back"):
-        if st.session_state.get("from_page") == "research_results":
+        # if st.session_state.get("from_page") == "research_results":
             st.session_state["page"] = "research"
             st.rerun()
 
