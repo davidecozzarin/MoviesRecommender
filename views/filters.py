@@ -34,12 +34,17 @@ def show_filters_page():
         preferences_ids = get_preferences(st.session_state["username"])
         disliked_ids = get_disliked(st.session_state["username"])
 
-        recommendations = get_recommendations(preferences_ids, disliked_ids, filters)
+        try:
+            recommendations = get_recommendations(preferences_ids, disliked_ids, filters)
 
-        if len(recommendations) > 0:  # Verifica se ci sono risultati
-            st.session_state["recommendations"] = recommendations
-            st.session_state["page"] = "results"
-            st.rerun()
-        else:
-            st.warning("No recommendations found based on your preferences and filters.")
-        
+            if len(recommendations) > 0:  # Verifica se ci sono risultati
+                st.session_state["recommendations"] = recommendations
+                st.session_state["page"] = "results"
+            else:
+                st.warning("No recommendations found based on your preferences and filters.")
+        except ValueError as e:
+            # Gestisci errori legati al modello KNN (ad esempio, n_neighbors > n_samples_fit)
+            st.error("Filters may be too restrictive. Try with a more general filter selection.")
+        except Exception as e:
+            # Gestisci altri errori generali, se necessario
+            st.error("An unexpected error occurred. Please try again later.")
