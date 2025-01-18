@@ -13,7 +13,6 @@ def show_selection_page():
 
     col1, col2 = st.columns([1, 1])
 
-    # Variabile per il messaggio di avviso o successo
     alert_message = None
     alert_type = None
 
@@ -28,7 +27,6 @@ def show_selection_page():
                 alert_message = "Please select between 3 to 8 movies before proceeding."
                 alert_type = "warning"
             else:
-                # Recupera solo gli ID dei film selezionati
                 selected_movie_ids = [
                     movie['filmtv_id'] for movie in st.session_state["movies_to_display"]
                     if movie['title'] in st.session_state["selected_movies"]
@@ -38,7 +36,6 @@ def show_selection_page():
                 alert_type = "success"
                 st.session_state["page"] = "filters"
 
-    # Mostra il messaggio di avviso o successo sopra l'elenco dei film
     if alert_message:
         if alert_type == "warning":
             st.warning(alert_message)

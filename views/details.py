@@ -9,7 +9,6 @@ def show_details_page():
     else:
         st.header(f"Details of '{movie_details['title']}'")
 
-        # Recupera il poster del film
         poster_url = get_movie_poster(movie_details['title'], movie_details.get('year'))
         
         if poster_url:

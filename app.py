@@ -7,7 +7,7 @@ from views.details import show_details_page
 from views.results import show_results_page
 from views.research import show_research_page, show_research_results_page
 
-# Configurazione della pagina
+
 st.set_page_config(
     page_title="MyCinema",
     page_icon="🎥",
@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Inizializza lo stato della sessione
+
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
     st.session_state["username"] = None
@@ -24,7 +24,7 @@ if "authenticated" not in st.session_state:
     st.session_state["page"] = "login"  # Stato iniziale della navigazione
     st.session_state["movie_details"] = None  # Dettagli del film selezionato
 
-# Funzione per la gestione di login e registrazione
+
 
 
 def logout():
@@ -38,7 +38,7 @@ def logout():
     st.rerun()
 
 
-# Forza la pagina di login se non autenticato
+
 if not st.session_state["authenticated"]:
     st.session_state["page"] = "login"
 st.title("MyCinema")
@@ -50,7 +50,7 @@ if st.session_state["page"] == "selection":
     show_selection_page()
 
 elif st.session_state["page"] == "filters":
-     # Barra laterale per il logout e l'accesso alla pagina preferenze
+
     with st.sidebar:
         st.header("Menu")
         if st.button("Research section"):
@@ -65,7 +65,7 @@ elif st.session_state["page"] == "filters":
     show_filters_page()
 
 elif st.session_state["page"] == "preferences":
-    # Barra laterale per il logout e tornare ai filtri
+
     with st.sidebar:
         st.header("Menu")
         if st.button("Recommandations section"):
@@ -84,7 +84,7 @@ elif st.session_state["page"] == "preferences":
     show_preferences_page()
 
 elif st.session_state["page"] == "details":
-    # Pagina dei dettagli del film
+
     show_details_page()
     if st.button("Back"):
         st.session_state["page"] = st.session_state.get("from_page")
@@ -95,14 +95,14 @@ elif st.session_state["page"] == "results":
     show_results_page()
 
 elif st.session_state["page"] == "result_details":
-    # Pagina dei dettagli del film
+
     show_details_page()
     if st.button("Back"):
         st.session_state["page"] = st.session_state.get("from_page")
         st.rerun()
 
 elif st.session_state["page"] == "research":
-     # Barra laterale per il logout e l'accesso alla pagina preferenze
+
     with st.sidebar:
         st.header("Menu")
         if st.button("Reccomandation section"):
@@ -131,7 +131,7 @@ elif st.session_state["page"] == "research_results":
             logout()
     show_research_results_page()
 
-# Sezione di login e registrazione
+
 
 if "authenticated" not in st.session_state or not st.session_state["authenticated"]:
     show_login_register_page()
