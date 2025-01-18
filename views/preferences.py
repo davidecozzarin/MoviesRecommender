@@ -10,19 +10,17 @@ def show_preferences_page():
     disliked = get_disliked(st.session_state["username"])
     movies = load_preprocessed_data("data/preprocessed_filmtv_movies.csv")
 
-    # Film nelle preferenze
     if preferences:
         st.subheader("Liked Movies")
-        liked_movies = movies[movies['filmtv_id'].isin(preferences)]  # Filtra i film salvati
+        liked_movies = movies[movies['filmtv_id'].isin(preferences)]
         for _, movie in liked_movies.iterrows():
             col1, col2, col3 = st.columns([9, 1, 1])
             with col1:
                 st.write(f"**Title**: {movie['title']} | **Duration**: {movie['duration']} min | **Year**: {movie['year']}")
             with col2:
                 if st.button("🔍", key=f"details_{movie['filmtv_id']}", help="View details of this movie", use_container_width=True):
-                    # Passa alla pagina dei dettagli
                     st.session_state["page"] = "details"
-                    st.session_state["movie_details"] = movie.to_dict()  # Salva i dettagli del film scelto
+                    st.session_state["movie_details"] = movie.to_dict()
                     st.rerun()
             with col3:
                 if st.button("❌", key=f"remove_like_{movie['filmtv_id']}", help="Remove this movie", use_container_width=True):
@@ -36,17 +34,15 @@ def show_preferences_page():
     else:
         st.warning("No liked movies found.")
 
-    # Film nei dislike
     if disliked:
         st.subheader("Disliked Movies")
-        disliked_movies = movies[movies['filmtv_id'].isin(disliked)]  # Filtra i film salvati nei dislike
+        disliked_movies = movies[movies['filmtv_id'].isin(disliked)]
         for _, movie in disliked_movies.iterrows():
             col1, col2, col3 = st.columns([9, 1, 1])
             with col1:
                 st.write(f"**Title**: {movie['title']} | **Duration**: {movie['duration']} min | **Year**: {movie['year']}")
             with col2:
                 if st.button("🔍", key=f"details_disliked_{movie['filmtv_id']}", help="View details of this movie", use_container_width=True):
-                    # Passa alla pagina dei dettagli
                     st.session_state["page"] = "details"
                     st.session_state["movie_details"] = movie.to_dict()  
                     st.rerun()

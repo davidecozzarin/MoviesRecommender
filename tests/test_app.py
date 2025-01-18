@@ -19,7 +19,7 @@ def test_load_preprocessed_data():
     df = load_preprocessed_data("data/preprocessed_filmtv_movies.csv")
     assert isinstance(df, pd.DataFrame)
     assert not df.empty
-    assert "filmtv_id" in df.columns  # Controlla che una colonna chiave esista.
+    assert "filmtv_id" in df.columns
 
 def test_load_preprocessed_data_error_handling():
     """Test per verificare che venga mostrato un errore con un file inesistente."""
@@ -33,15 +33,15 @@ def test_get_random_movies(sample_movies_df):
     assert isinstance(result, list)
     assert len(result) == 2
     for movie in result:
-        assert "filmtv_id" in movie  # Controlla che i film abbiano un ID.
-        assert movie["avg_vote"] >= 7.5  # Controlla che rispettino il filtro.
+        assert "filmtv_id" in movie 
+        assert movie["avg_vote"] >= 7.5
 
 def test_get_random_movies_not_enough_movies(sample_movies_df):
     """Test per verificare il comportamento con meno film disponibili del richiesto."""
     result = get_random_movies(sample_movies_df[sample_movies_df["avg_vote"] >= 7.5], num_movies=5)
-    assert len(result) == 3  # Solo 3 film hanno avg_vote >= 7.5.
+    assert len(result) == 3
 
 def test_get_random_movies_no_movies(sample_movies_df):
     """Test per verificare il comportamento quando non ci sono film disponibili."""
     result = get_random_movies(sample_movies_df[sample_movies_df["avg_vote"] >= 9], num_movies=2)
-    assert len(result) == 0  # Nessun film rispetta il filtro.
+    assert len(result) == 0 

@@ -19,13 +19,13 @@ def get_random_movies(movies_df, num_movies=30, min_avg_vote=7.5):
 
 def get_movie_poster(title, year):
     """Recupera il poster di un film utilizzando l'API OMDb."""
-    api_key = "f34d45dd"  # Sostituisci con la tua chiave API OMDb
+    api_key = "f34d45dd"
     url = f"http://www.omdbapi.com/?apikey={api_key}&t={title}&y={year}"
     try:
         response = requests.get(url)
         data = response.json()
         if data.get("Response") == "True":
-            return data.get("Poster")  # Restituisce l'URL del poster
+            return data.get("Poster")
         else:
             return None  # Nessun poster trovato
     except Exception as e:

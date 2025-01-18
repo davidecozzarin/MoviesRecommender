@@ -24,7 +24,6 @@ def setup_test_user():
     password = "secure_password"
     profile_pic = "profile_pic_url"
 
-    # Pulisci eventuali dati esistenti
     users_collection.delete_one({"username": username})
 
     # Crea un nuovo utente
@@ -32,7 +31,6 @@ def setup_test_user():
 
     yield username, password  # Restituisce i dati di test per il test
 
-    # Cleanup dopo il test
     users_collection.delete_one({"username": username})
 
 

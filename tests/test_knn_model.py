@@ -4,7 +4,6 @@ import numpy as np
 from src.knn_model import filter_movies, get_recommendations
 
 def test_filter_movies():
-    # Dataset di esempio
     movies = pd.DataFrame({
         "filmtv_id": [1, 2, 3],
         "country": ["USA", "Italy", "France"],
